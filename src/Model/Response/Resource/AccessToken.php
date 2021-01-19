@@ -2,30 +2,42 @@
 
 namespace LevelCredit\LevelCreditApi\Model\Response\Resource;
 
+use JMS\Serializer\Annotation as Serializer;
+
 class AccessToken
 {
     /**
      * @var string
+     *
+     * @Serializer\Type("string")
      */
     protected $accessToken;
 
     /**
      * @var int
+     *
+     * @Serializer\Type("integer")
      */
     protected $expiresIn;
 
     /**
      * @var string
+     *
+     * @Serializer\Type("string")
      */
     protected $tokenType;
 
     /**
      * @var string
+     *
+     * @Serializer\Type("string")
      */
     protected $scope;
 
     /**
      * @var string
+     *
+     * @Serializer\Type("string")
      */
     protected $refreshToken;
 

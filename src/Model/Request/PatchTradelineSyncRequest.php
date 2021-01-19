@@ -2,7 +2,6 @@
 
 namespace LevelCredit\LevelCreditApi\Model\Request;
 
-class PatchTradelineSyncRequest
+class PatchTradelineSyncRequest extends BaseRequest
 {
-
 }

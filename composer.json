@@ -7,7 +7,8 @@
   "authors": [
     {
       "name": "Yuriy Borovchuk",
-      "email": "yuriy@renttrack.com"
+      "email": "yuriy@renttrack.com",
+      "homepage": "https://www.levelcredit.com"
     }
   ],
   "require": {

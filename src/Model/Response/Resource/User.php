@@ -9,16 +9,22 @@ class User extends BaseResource
 {
     /**
      * @var string
+     *
+     * @Serializer\Type("string")
      */
     protected $firstName;
 
     /**
      * @var string
+     *
+     * @Serializer\Type("string")
      */
     protected $lastName;
 
     /**
      * @var string
+     *
+     * @Serializer\Type("string")
      */
     protected $email;
 

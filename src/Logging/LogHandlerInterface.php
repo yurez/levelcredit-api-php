@@ -1,15 +1,14 @@
 <?php
 
-namespace LevelCredit\LevelCreditApi\LoggableBehavior;
+namespace LevelCredit\LevelCreditApi\Logging;
 
-use GuzzleHttp\MessageFormatter;
 use Psr\Log\LoggerInterface;
 
 interface LogHandlerInterface
 {
     public function getLogger(): LoggerInterface;
 
-    public function getMessageFormatter(): MessageFormatter;
+    public function getMessageFormatter(): MessageFormatterInterface;
 
     /**
      * @see \Psr\Log\LogLevel

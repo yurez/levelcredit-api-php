@@ -2,15 +2,21 @@
 
 namespace LevelCredit\LevelCreditApi\Model\Response\Resource;
 
+use JMS\Serializer\Annotation as Serializer;
+
 class Sync extends BaseResource
 {
     /**
      * @var string
+     *
+     * @Serializer\Type("string")
      */
     protected $status;
 
     /**
      * @var string
+     *
+     * @Serializer\Type("string")
      */
     protected $message;
 

@@ -1,6 +1,6 @@
 <?php
 
-namespace LevelCredit\LevelCreditApi\LoggableBehavior;
+namespace LevelCredit\LevelCreditApi\Logging;
 
 use GuzzleHttp\MessageFormatter;
 use Psr\Log\LoggerInterface;
@@ -19,7 +19,7 @@ class DefaultLogHandler implements LogHandlerInterface
         $this->logger = $logger;
     }
 
-    public static function create(LoggerInterface $logger): self
+    public static function create(LoggerInterface $logger = null): self
     {
         $logger || $logger = new NullLogger();
 
@@ -31,13 +31,13 @@ class DefaultLogHandler implements LogHandlerInterface
         return $this->logger;
     }
 
-    public function getMessageFormatter(): MessageFormatter
+    public function getMessageFormatter(): MessageFormatterInterface
     {
         return new MessageFormatter();
     }
 
     public function getLogLevel(): string
     {
-        return LogLevel::ERROR;
+        return LogLevel::DEBUG;
     }
 }

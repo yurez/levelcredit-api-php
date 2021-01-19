@@ -8,7 +8,8 @@ use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\RequestOptions;
-use LevelCredit\LevelCreditApi\LoggableBehavior\LogHandlerInterface;
+use LevelCredit\LevelCreditApi\Logging\DefaultLogHandler;
+use LevelCredit\LevelCreditApi\Logging\LogHandlerInterface;
 use LevelCredit\LevelCreditApi\Model\Request\CreateTradelineSyncRequest;
 use LevelCredit\LevelCreditApi\Model\Request\GetPartnerUsersFilter;
 use LevelCredit\LevelCreditApi\Model\Request\PatchTradelineSyncRequest;
@@ -20,6 +21,7 @@ use LevelCredit\LevelCreditApi\Model\Response\Resource\Sync;
 use LevelCredit\LevelCreditApi\Model\Response\Resource\User;
 use LevelCredit\LevelCreditApi\Model\Response\SyncResourceResponse;
 use LevelCredit\LevelCreditApi\Model\Response\UserCollectionResponse;
+use LevelCredit\LevelCreditApi\Serializer\Serializer;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamInterface;
 use Psr\Http\Message\UriInterface;
@@ -77,6 +79,12 @@ class LevelCreditApiClient
      */
     protected $serializer;
 
+    /**
+     * @param Serializer $serializer
+     * @param string $clientId
+     * @param string $clientSecret
+     * @param string $baseUri
+     */
     public function __construct(
         Serializer $serializer,
         string $clientId = '',
@@ -90,6 +98,12 @@ class LevelCreditApiClient
         $this->handlerStack = HandlerStack::create();
     }
 
+    /**
+     * @param string $clientId
+     * @param string $clientSecret
+     * @param string $baseUri
+     * @return static
+     */
     public static function create(
         string $clientId = '',
         string $clientSecret = '',
@@ -100,21 +114,33 @@ class LevelCreditApiClient
 
     /**
      * @param LogHandlerInterface $logHandler
+     * @return static
      */
-    public function addLogHandler(LogHandlerInterface $logHandler)
+    public function addLogHandler(LogHandlerInterface $logHandler): self
     {
         $this->addRewindMapResponse(self::LOG_STACK);
         $this->handlerStack->push(
             Middleware::log($logHandler->getLogger(), $logHandler->getMessageFormatter(), $logHandler->getLogLevel()),
             self::LOG_STACK
         );
+
+        return $this;
     }
 
-    public function disableLogHandlers()
+    /**
+     * @return static
+     */
+    public function disableLogHandlers(): self
     {
         $this->handlerStack->remove(self::LOG_STACK);
+
+        return $this;
     }
 
+    /**
+     * @param string $accessToken
+     * @return static
+     */
     public function setAccessToken(string $accessToken): self
     {
         $this->accessToken = $accessToken;
@@ -123,6 +149,8 @@ class LevelCreditApiClient
     }
 
     /**
+     * @param string $username
+     * @param string $password
      * @return AccessTokenResponse|BaseResponse
      * @throws Exception\LevelCreditApiException
      */
@@ -137,6 +165,7 @@ class LevelCreditApiClient
     }
 
     /**
+     * @param string $refreshToken
      * @return AccessTokenResponse|BaseResponse
      * @throws Exception\LevelCreditApiException
      */
@@ -151,6 +180,8 @@ class LevelCreditApiClient
     }
 
     /**
+     * @param CreateTradelineSyncRequest $request
+     * @param string|null $accessToken
      * @return SyncResourceResponse|BaseResponse
      * @throws Exception\LevelCreditApiException
      */
@@ -170,6 +201,9 @@ class LevelCreditApiClient
     }
 
     /**
+     * @param int $syncId
+     * @param string $data
+     * @param string|null $accessToken
      * @return EmptyResponse|BaseResponse
      * @throws Exception\LevelCreditApiException
      */
@@ -190,6 +224,9 @@ class LevelCreditApiClient
     }
 
     /**
+     * @param int $syncId
+     * @param PatchTradelineSyncRequest $request
+     * @param string|null $accessToken
      * @return EmptyResponse|BaseResponse
      * @throws Exception\LevelCreditApiException
      */
@@ -210,6 +247,8 @@ class LevelCreditApiClient
     }
 
     /**
+     * @param GetPartnerUsersFilter $filter
+     * @param string|null $accessToken
      * @return UserCollectionResponse|BaseResponse
      * @throws Exception\LevelCreditApiException
      */
@@ -228,9 +267,12 @@ class LevelCreditApiClient
     }
 
     /**
+     * @param string $grantType
+     * @param array $credentials
+     * @return ResponseInterface
      * @throws Exception\ClientException
      */
-    protected function sendAuthRequest(string $grandType, array $credentials): ResponseInterface
+    protected function sendAuthRequest(string $grantType, array $credentials): ResponseInterface
     {
         return $this->__sendRequest(
             'GET',
@@ -240,7 +282,7 @@ class LevelCreditApiClient
                     [
                         'client_id' => $this->clientId,
                         'client_secret' => $this->clientSecret,
-                        'grant_type' => $grandType,
+                        'grant_type' => $grantType,
                     ],
                     $credentials
                 ),
@@ -251,7 +293,7 @@ class LevelCreditApiClient
     /**
      * @param string $method HTTP method
      * @param string|UriInterface $path
-     * @param array $options request options
+     * @param array $options Request options
      * @param array $headers Request headers
      * @param string|null|resource|StreamInterface $body Request body
      * @param bool $withDefaultHeaders
@@ -282,6 +324,9 @@ class LevelCreditApiClient
         }
     }
 
+    /**
+     * @return Client
+     */
     protected function prepareClient(): Client
     {
         return new Client(['handler' => $this->handlerStack, 'base_uri' => $this->baseUri]);
@@ -289,6 +334,7 @@ class LevelCreditApiClient
 
     /**
      * On add middleware that should work with response body please BEFORE use this for rewind body response
+     * @param string $handlerName
      */
     protected function addRewindMapResponse(string $handlerName): void
     {
@@ -323,6 +369,9 @@ class LevelCreditApiClient
     }
 
     /**
+     * @param string $method
+     * @param mixed ...$ids
+     * @return string
      * @throws Exception\ClientException
      */
     protected function preparePath(string $method, ...$ids): string
@@ -334,12 +383,20 @@ class LevelCreditApiClient
         return vsprintf(self::BASE_API_PREFIX . static::API_PATHS[$method], $ids);
     }
 
+    /**
+     * @param string|null $accessToken
+     * @return array|string[]
+     */
     protected function prepareAuthorizeHeader(string $accessToken = null): array
     {
         return $accessToken ? ['Authorization' => 'Bearer ' . $accessToken] : [];
     }
 
     /**
+     * @param string $method
+     * @param ResponseInterface $response
+     * @param BaseResponse $responseModel
+     * @return BaseResponse
      * @throws Exception\SerializerException
      */
     protected function parseResponse(

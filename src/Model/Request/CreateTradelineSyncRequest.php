@@ -4,7 +4,7 @@ namespace LevelCredit\LevelCreditApi\Model\Request;
 
 use LevelCredit\LevelCreditApi\Enum\TradelineSyncType;
 
-class CreateTradelineSyncRequest
+class CreateTradelineSyncRequest extends BaseRequest
 {
     /**
      * @var string
@@ -22,11 +22,10 @@ class CreateTradelineSyncRequest
      */
     protected $type;
 
-    public function getSummaryEmail(): string
-    {
-        return $this->summaryEmail;
-    }
-
+    /**
+     * @param string $summaryEmail
+     * @return static
+     */
     public function setSummaryEmail(string $summaryEmail): self
     {
         $this->summaryEmail = $summaryEmail;
@@ -34,11 +33,10 @@ class CreateTradelineSyncRequest
         return $this;
     }
 
-    public function getTimeoutMinutes(): int
-    {
-        return $this->timeoutMinutes;
-    }
-
+    /**
+     * @param int $timeoutMinutes
+     * @return static
+     */
     public function setTimeoutMinutes(int $timeoutMinutes): self
     {
         $this->timeoutMinutes = $timeoutMinutes;
@@ -46,11 +44,11 @@ class CreateTradelineSyncRequest
         return $this;
     }
 
-    public function getType(): string
-    {
-        return $this->type;
-    }
-
+    /**
+     * @param string $type
+     * @return static
+     * @see TradelineSyncType
+     */
     public function setType(string $type): self
     {
         $this->type = $type;

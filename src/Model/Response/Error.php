@@ -7,23 +7,23 @@ use JMS\Serializer\Annotation as Serializer;
 class Error
 {
     /**
-     * @Serializer\Type("string")
-     *
      * @var string
+     *
+     * @Serializer\Type("string")
      */
     protected $parameter;
 
     /**
-     * @Serializer\Type("string")
+     * @var mixed
      *
-     * @var string
+     * @Serializer\Type("mixed")
      */
     protected $value;
 
     /**
-     * @Serializer\Type("string")
-     *
      * @var string
+     *
+     * @Serializer\Type("string")
      */
     protected $message;
 
