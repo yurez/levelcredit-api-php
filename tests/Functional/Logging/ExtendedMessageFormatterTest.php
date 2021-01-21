@@ -85,7 +85,7 @@ RESULT;
 
         $request = new Request(
             'POST',
-            'https://my.levelcredit.com/api/test?password=X-REMOVED-PASSWORD-X&test=1&embeds[]=subscriptions',
+            'https://my.levelcredit.com/api/test?password=somePass&test=1&embeds[]=subscriptions',
             ['Authorization' => 'Bearer ZjYwZDEzOTgzMjJmYjc4NWRlYjdkOWZ', 'Content-Type' => 'application/json'],
             '{"ssn":"123-33-3434","address":{"street1":"123 Test Street","city":"New-York"}}'
         );

@@ -155,7 +155,7 @@ class SerializerTest extends TestCase
     /**
      * @test
      */
-    public function shouldDeserializeFailedResponse(): void
+    public function shouldDeserializeGeneralFailedResponse(): void
     {
         $json = '[
             {"parameter":"status","value":"deleted","message":"Unsupported status"},
@@ -171,6 +171,25 @@ class SerializerTest extends TestCase
         $this->assertCount(3, $responseModel->getErrors());
         $this->assertEquals(
             'Unsupported status. Something went wrong. Can\'t be use.',
+            (string)$responseModel->getErrors()
+        );
+    }
+
+    /**
+     * @test
+     */
+    public function shouldDeserializeOAuthFailedResponse(): void
+    {
+        $json = '{"error": "invalid_grant","error_description": "The access token provided is invalid."}';
+
+        $response = new Response(401, [], $json);
+
+        $responseModel =  Serializer::create()->deserializeResponse($response, new EmptyResponse());
+
+        $this->assertEquals(401, $responseModel->getStatusCode());
+        $this->assertCount(1, $responseModel->getErrors());
+        $this->assertEquals(
+            'The access token provided is invalid.',
             (string)$responseModel->getErrors()
         );
     }

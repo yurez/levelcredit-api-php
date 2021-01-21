@@ -10,13 +10,14 @@ use LevelCredit\LevelCreditApi\Exception\SerializerException;
 use LevelCredit\LevelCreditApi\Model\Response\BaseResponse;
 use LevelCredit\LevelCreditApi\Model\Response\CollectionResponse;
 use LevelCredit\LevelCreditApi\Model\Response\EmptyResponse;
+use LevelCredit\LevelCreditApi\Model\Response\Error;
 use LevelCredit\LevelCreditApi\Model\Response\ErrorCollection;
 use LevelCredit\LevelCreditApi\Model\Response\ResourceResponse;
 use Psr\Http\Message\ResponseInterface;
 
 class Serializer
 {
-    protected const FAILED_STATUS_ENTRYPOINT = 400;
+    protected const FAILED_STATUS_ENTRY_POINT = 400;
 
     /**
      * @var JMSSerializer
@@ -96,7 +97,7 @@ class Serializer
 
         if (empty($body)) {
             return $this->processEmptyResponse($responseModel);
-        } elseif ($response->getStatusCode() >= static::FAILED_STATUS_ENTRYPOINT) {
+        } elseif ($response->getStatusCode() >= static::FAILED_STATUS_ENTRY_POINT) {
             return $this->processFailedResponse($responseModel, $body);
         } elseif ($responseModel instanceof CollectionResponse) {
             return $this->processCollectionResponse(
@@ -141,14 +142,24 @@ class Serializer
                 'json'
             );
         } catch (\Throwable $e) {
-            throw new SerializerException('Unable deserialize failed response: ' . $e->getMessage());
+            try {
+                $result = $this->serializer->deserialize(
+                    $body,
+                    'LevelCredit\LevelCreditApi\Model\Response\Error',
+                    'json'
+                );
+            } catch (\Throwable $e) {
+                $responseModel->setErrors(new ErrorCollection([new Error($body)]));
+
+                return $responseModel;
+            }
         }
 
         if ($result instanceof ArrayCollection) {
             $result = $result->toArray();
         }
 
-        $responseModel->setErrors(new ErrorCollection($result ?: []));
+        $responseModel->setErrors(new ErrorCollection(is_array($result) ? $result : [$result]));
 
         return $responseModel;
     }

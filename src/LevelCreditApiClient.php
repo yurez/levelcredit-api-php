@@ -86,7 +86,7 @@ class LevelCreditApiClient
     public function __construct(
         string $clientId = '',
         string $clientSecret = '',
-        string $baseUri = self::BASE_URI,
+        string $baseUri = self::BASE_URI
     ) {
         $this->clientId = $clientId;
         $this->clientSecret = $clientSecret;
@@ -370,7 +370,7 @@ class LevelCreditApiClient
      */
     protected function prepareClient(): Client
     {
-        return new Client(['handler' => $this->handlerStack, 'base_uri' => $this->baseUri]);
+        return new Client(['handler' => $this->handlerStack, 'base_uri' => $this->baseUri, 'http_errors' => false]);
     }
 
     /**

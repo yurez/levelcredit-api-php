@@ -28,11 +28,33 @@ class Error
     protected $message;
 
     /**
+     * @var string
+     *
+     * @Serializer\Type("string")
+     */
+    protected $error;
+
+    /**
+     * @var string
+     *
+     * @Serializer\Type("string")
+     */
+    protected $errorDescription;
+
+    /**
+     * @param string $message
+     */
+    public function __construct(string $message = '')
+    {
+        $this->message = $message;
+    }
+
+    /**
      * @return string
      */
     public function getParameter(): string
     {
-        return $this->parameter;
+        return $this->parameter ?: '_globals';
     }
 
     /**
@@ -48,6 +70,6 @@ class Error
      */
     public function getMessage(): string
     {
-        return $this->message;
+        return $this->message ?: $this->errorDescription;
     }
 }

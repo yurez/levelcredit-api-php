@@ -354,7 +354,11 @@ class ExtendedMessageFormatter extends MessageFormatter implements MessageFormat
     protected function formatRequestQuery(RequestInterface $request): RequestInterface
     {
         if ($this->queryFormatter && $query = $request->getUri()->getQuery()) {
-            $request->getUri()->withQuery($this->queryFormatter->format($query));
+            $request = $request->withUri(
+                $request->getUri()->withQuery(
+                    $this->queryFormatter->format($query)
+                )
+            );
         }
 
         return $request;

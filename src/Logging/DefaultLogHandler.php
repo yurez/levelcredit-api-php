@@ -32,6 +32,7 @@ class DefaultLogHandler implements LogHandlerInterface
         '/password/i' => 'X-REMOVED-PASSWORD-X',
         '/access_token/i' => 'X-REMOVED-ACCESS_TOKEN-X',
         '/refresh_token/i' => 'X-REMOVED-REFRESH_TOKEN-X',
+        '/client_secret/i' => 'X-REMOVED-CLIENT_SECRET-X',
     ];
 
     /**
