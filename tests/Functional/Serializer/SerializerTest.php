@@ -1,6 +1,6 @@
 <?php
 
-namespace LevelCredit\LevelCreditApi\Tests\Functional;
+namespace LevelCredit\LevelCreditApi\Tests\Functional\Serializer;
 
 use GuzzleHttp\Psr7\Response;
 use LevelCredit\LevelCreditApi\Enum\TradelineSyncStatus;

@@ -6,8 +6,37 @@ use GuzzleHttp\MessageFormatter;
 use Psr\Http\Message\MessageInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
-use GuzzleHttp\Psr7\Message;
+use GuzzleHttp\Psr7 as Psr7;
 
+/**
+ * To be compatible with Guzzle 7.1.x we need to extend from GuzzleHttp\MessageFormatter
+ *
+ * Formats log messages using variable substitutions for requests, responses,
+ * and other transactional data.
+ *
+ * The following variable substitutions are supported:
+ *
+ * - {request}:        Full HTTP request message
+ * - {response}:       Full HTTP response message
+ * - {ts}:             ISO 8601 date in GMT
+ * - {date_iso_8601}   ISO 8601 date in GMT
+ * - {date_common_log} Apache common log date using the configured timezone.
+ * - {host}:           Host of the request
+ * - {method}:         Method of the request
+ * - {uri}:            URI of the request
+ * - {version}:        Protocol version
+ * - {target}:         Request target of the request (path + query + fragment)
+ * - {hostname}:       Hostname of the machine that sent the request
+ * - {code}:           Status code of the response (if available)
+ * - {phrase}:         Reason phrase of the response  (if available)
+ * - {error}:          Any error messages (if available)
+ * - {req_header_*}:   Replace `*` with the lowercased name of a request header to add to the message
+ * - {res_header_*}:   Replace `*` with the lowercased name of a response header to add to the message
+ * - {req_headers}:    Request headers
+ * - {res_headers}:    Response headers
+ * - {req_body}:       Request body
+ * - {res_body}:       Response body
+ */
 class ExtendedMessageFormatter extends MessageFormatter implements MessageFormatterInterface
 {
     /**
@@ -17,11 +46,70 @@ class ExtendedMessageFormatter extends MessageFormatter implements MessageFormat
     protected $template;
 
     /**
+     * @var HeaderFormatterInterface
+     */
+    protected $headerFormatter;
+
+    /**
+     * @var BodyFormatterInterface
+     */
+    protected $bodyFormatter;
+
+    /**
+     * @var QueryFormatterInterface
+     */
+    protected $queryFormatter;
+
+    /**
      * @param string $template Log message template
      */
     public function __construct($template = self::CLF)
     {
         $this->template = $template ?: self::CLF;
+
+        parent::__construct($template);
+    }
+
+    /**
+     * @param string $template
+     * @return static
+     */
+    public static function create($template = self::CLF): self
+    {
+        return new static($template);
+    }
+
+    /**
+     * @param HeaderFormatterInterface $headerFormatter
+     * @return static
+     */
+    public function setHeaderFormatter(HeaderFormatterInterface $headerFormatter): self
+    {
+        $this->headerFormatter = $headerFormatter;
+
+        return $this;
+    }
+
+    /**
+     * @param BodyFormatterInterface $bodyFormatter
+     * @return static
+     */
+    public function setBodyFormatter(BodyFormatterInterface $bodyFormatter): self
+    {
+        $this->bodyFormatter = $bodyFormatter;
+
+        return $this;
+    }
+
+    /**
+     * @param QueryFormatterInterface $queryFormatter
+     * @return static
+     */
+    public function setQueryFormatter(QueryFormatterInterface $queryFormatter): self
+    {
+        $this->queryFormatter = $queryFormatter;
+
+        return $this;
     }
 
     /**
@@ -30,7 +118,6 @@ class ExtendedMessageFormatter extends MessageFormatter implements MessageFormat
      * @param RequestInterface $request Request that was sent
      * @param ResponseInterface|null $response Response that was received
      * @param \Throwable|null $error Exception that was received
-     *
      * @return string
      */
     public function format(
@@ -51,12 +138,13 @@ class ExtendedMessageFormatter extends MessageFormatter implements MessageFormat
                 $result = '';
                 switch ($matches[1]) {
                     case 'request':
-                        $result = Message::toString($request);
+                        $result = Psr7\Message::toString($this->formatRequest($request));
                         break;
                     case 'response':
-                        $result = $response ? Message::toString($response) : '';
+                        $result = $response ? Psr7\Message::toString($this->formatResponse($response)) : '';
                         break;
                     case 'req_headers':
+                        $request = $this->formatRequestQuery($request);
                         $result = \trim($request->getMethod()
                                 . ' ' . $request->getRequestTarget())
                             . ' HTTP/' . $request->getProtocolVersion() . "\r\n"
@@ -73,7 +161,7 @@ class ExtendedMessageFormatter extends MessageFormatter implements MessageFormat
                             : 'NULL';
                         break;
                     case 'req_body':
-                        $result = $request->getBody()->__toString();
+                        $result = $this->formatBody($request->getBody()->__toString());
                         break;
                     case 'res_body':
                         if (!$response instanceof ResponseInterface) {
@@ -88,7 +176,7 @@ class ExtendedMessageFormatter extends MessageFormatter implements MessageFormat
                             break;
                         }
 
-                        $result = $response->getBody()->__toString();
+                        $result = $this->formatBody($response->getBody()->__toString());
                         break;
                     case 'ts':
                     case 'date_iso_8601':
@@ -105,10 +193,10 @@ class ExtendedMessageFormatter extends MessageFormatter implements MessageFormat
                         break;
                     case 'uri':
                     case 'url':
-                        $result = $request->getUri();
+                        $result = $this->formatRequestQuery($request)->getUri();
                         break;
                     case 'target':
-                        $result = $request->getRequestTarget();
+                        $result = $this->formatRequestQuery($request)->getRequestTarget();
                         break;
                     case 'req_version':
                         $result = $request->getProtocolVersion();
@@ -136,15 +224,17 @@ class ExtendedMessageFormatter extends MessageFormatter implements MessageFormat
                     default:
                         // handle prefixed dynamic headers
                         if (\strpos($matches[1], 'req_header_') === 0) {
-                            $result = $request->getHeaderLine(\substr($matches[1], 11));
+                            $headerName = \substr($matches[1], 11);
+                            $result = $this->formatMessageHeader($request, $headerName)->getHeaderLine($headerName);
                         } elseif (\strpos($matches[1], 'res_header_') === 0) {
+                            $headerName = \substr($matches[1], 11);
                             $result = $response
-                                ? $response->getHeaderLine(\substr($matches[1], 11))
+                                ? $this->formatMessageHeader($response, $headerName)->getHeaderLine($headerName)
                                 : 'NULL';
                         }
                 }
-
                 $cache[$matches[1]] = $result;
+
                 return $result;
             },
             $this->template
@@ -158,6 +248,7 @@ class ExtendedMessageFormatter extends MessageFormatter implements MessageFormat
      */
     protected function headers(MessageInterface $message): string
     {
+        $this->formatMessageHeaders($message);
         $result = '';
         foreach ($message->getHeaders() as $name => $values) {
             $result .= $name . ': ' . \implode(', ', $values) . "\r\n";
@@ -168,54 +259,104 @@ class ExtendedMessageFormatter extends MessageFormatter implements MessageFormat
 
     /**
      * @param RequestInterface $request
-     * @return RequestInterface
+     * @return RequestInterface|MessageInterface
      */
-    protected function formatRequest(RequestInterface $request)
+    protected function formatRequest(RequestInterface $request): RequestInterface
     {
-        return $this->formatMessage($request, $this->headerFormatter, $this->requestBodyFormatter);
+        $request = $this->formatMessage($request);
+        $request = $this->formatRequestQuery($request);
+
+        return $request;
     }
 
     /**
      * @param ResponseInterface $response
-     * @return ResponseInterface
+     * @return ResponseInterface|MessageInterface
      */
-    protected function formatResponse(ResponseInterface $response)
+    protected function formatResponse(ResponseInterface $response): ResponseInterface
     {
-        return $this->formatMessage($response, $this->headerFormatter, $this->responseBodyFormatter);
+        return $this->formatMessage($response);
     }
 
     /**
      * @param MessageInterface $message
-     * @param HeaderFormatterInterface|null $headerFormatter
-     * @param BodyFormatterInterface|null $bodyFormatter
-     *
      * @return MessageInterface
      */
-    protected function formatMessage(
-        MessageInterface $message,
-        HeaderFormatterInterface $headerFormatter = null,
-        BodyFormatterInterface $bodyFormatter = null
-    ) {
+    protected function formatMessage(MessageInterface $message): MessageInterface
+    {
+        $message = $this->formatMessageHeaders($message);
+        $message = $this->formatMessageBody($message);
 
-        if ($bodyFormatter) {
-            $body = $bodyFormatter->format((string) $message->getBody());
+        return $message;
+    }
 
-            $message = $message->withBody(Psr7\S($body));
+    /**
+     * @param MessageInterface $message
+     * @return MessageInterface
+     */
+    protected function formatMessageHeaders(MessageInterface $message): MessageInterface
+    {
+        if ($this->headerFormatter) {
+            foreach ($message->getHeaders() as $name => $values) {
+                $message = $this->formatMessageHeader($message, $name);
+            }
         }
 
         return $message;
     }
 
-    protected function formatHeader(HeaderFormatterInterface $formatter, MessageInterface $message)
+    /**
+     * @param MessageInterface $message
+     * @param string $name
+     * @return MessageInterface
+     */
+    protected function formatMessageHeader(MessageInterface $message, string $name): MessageInterface
     {
-        if ($formatter) {
-            foreach ($message->getHeaders() as $name => $values) {
-                $value = $headerFormatter->format($name, $values);
-
-                $message = $message->withHeader($name, $value);
-            }
+        if ($this->headerFormatter && $values = $message->getHeader($name)) {
+            $values = $this->headerFormatter->format($name, $values);
+            $message = $message->withHeader($name, $values);
         }
 
         return $message;
+    }
+
+    /**
+     * @param MessageInterface $message
+     * @return MessageInterface
+     */
+    protected function formatMessageBody(MessageInterface $message): MessageInterface
+    {
+        if ($this->bodyFormatter) {
+            $body = $this->formatBody($message->getBody()->__toString());
+            $message = $message->withBody(Psr7\Utils::streamFor($body));
+        }
+
+        return $message;
+    }
+
+    /**
+     * @param string $body
+     * @return string
+     */
+    protected function formatBody(string $body): string
+    {
+        if ($this->bodyFormatter && $body) {
+            return $this->bodyFormatter->format($body);
+        }
+
+        return $body;
+    }
+
+    /**
+     * @param RequestInterface $request
+     * @return RequestInterface
+     */
+    protected function formatRequestQuery(RequestInterface $request): RequestInterface
+    {
+        if ($this->queryFormatter && $query = $request->getUri()->getQuery()) {
+            $request->getUri()->withQuery($this->queryFormatter->format($query));
+        }
+
+        return $request;
     }
 }

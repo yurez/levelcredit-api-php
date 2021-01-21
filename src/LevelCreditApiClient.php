@@ -8,7 +8,6 @@ use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\RequestOptions;
-use LevelCredit\LevelCreditApi\Logging\DefaultLogHandler;
 use LevelCredit\LevelCreditApi\Logging\LogHandlerInterface;
 use LevelCredit\LevelCreditApi\Model\Request\CreateTradelineSyncRequest;
 use LevelCredit\LevelCreditApi\Model\Request\GetPartnerUsersFilter;
@@ -80,22 +79,20 @@ class LevelCreditApiClient
     protected $serializer;
 
     /**
-     * @param Serializer $serializer
      * @param string $clientId
      * @param string $clientSecret
      * @param string $baseUri
      */
     public function __construct(
-        Serializer $serializer,
         string $clientId = '',
         string $clientSecret = '',
         string $baseUri = self::BASE_URI,
     ) {
-        $this->serializer = $serializer;
         $this->clientId = $clientId;
         $this->clientSecret = $clientSecret;
         $this->baseUri = $baseUri;
         $this->handlerStack = HandlerStack::create();
+        $this->serializer = Serializer::create();
     }
 
     /**
@@ -109,7 +106,51 @@ class LevelCreditApiClient
         string $clientSecret = '',
         string $baseUri = self::BASE_URI
     ): self {
-        return new static(Serializer::create(), $clientId, $clientSecret, $baseUri);
+        return new static($clientId, $clientSecret, $baseUri);
+    }
+
+    /**
+     * @param Serializer $serializer
+     * @return static
+     */
+    public function setSerializer(Serializer $serializer): self
+    {
+        $this->serializer = $serializer;
+
+        return $this;
+    }
+
+    /**
+     * @param string $clientId
+     * @return static
+     */
+    public function setClientId(string $clientId): self
+    {
+        $this->clientId = $clientId;
+
+        return $this;
+    }
+
+    /**
+     * @param string $clientSecret
+     * @return static
+     */
+    public function setClientSecret(string $clientSecret): self
+    {
+        $this->clientSecret = $clientSecret;
+
+        return $this;
+    }
+
+    /**
+     * @param string $baseUri
+     * @return static
+     */
+    public function setBaseUri(string $baseUri): self
+    {
+        $this->baseUri = $baseUri;
+
+        return $this;
     }
 
     /**
@@ -339,7 +380,7 @@ class LevelCreditApiClient
     protected function addRewindMapResponse(string $handlerName): void
     {
         $mapResponse = Middleware::mapResponse(
-            function(ResponseInterface $response) {
+            function (ResponseInterface $response) {
                 $response->getBody()->rewind();
 
                 return $response;
