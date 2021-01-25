@@ -1,0 +1,37 @@
+{
+  "name": "levelcredit/levelcredit-api-php",
+  "description": "LevelCredit API Client Library for PHP",
+  "minimum-stability": "stable",
+  "license": "MIT",
+  "version": "1.0.0",
+  "authors": [
+    {
+      "name": "Yuriy Borovchuk",
+      "email": "yuriy@renttrack.com",
+      "homepage": "https://www.levelcredit.com"
+    }
+  ],
+  "require": {
+    "php": "^7.3 || ^8.0",
+    "ext-curl": "*",
+    "ext-json": "*",
+    "guzzlehttp/guzzle": "7.*",
+    "jms/serializer": "^1.13|^2.0|^3.0",
+    "doctrine/collections": "^1.6",
+    "psr/log": "^1.1"
+  },
+  "autoload": {
+    "psr-4": {
+      "LevelCredit\\LevelCreditApi\\": "src/"
+    }
+  },
+  "require-dev": {
+    "phpunit/phpunit": "8.*",
+    "monolog/monolog": "2.*"
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "LevelCredit\\LevelCreditApi\\Tests\\": "tests/"
+    }
+  }
+}
