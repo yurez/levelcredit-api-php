@@ -3,18 +3,31 @@
 namespace LevelCredit\LevelCreditApi\Tests\Functional\Serializer;
 
 use GuzzleHttp\Psr7\Response;
+use LevelCredit\LevelCreditApi\Enum\BankAccountType;
+use LevelCredit\LevelCreditApi\Enum\OrderDeliveryMethod;
+use LevelCredit\LevelCreditApi\Enum\OrderPaymentType;
+use LevelCredit\LevelCreditApi\Enum\OrderStatus;
+use LevelCredit\LevelCreditApi\Enum\PaymentAccountType;
 use LevelCredit\LevelCreditApi\Enum\TradelineSyncStatus;
 use LevelCredit\LevelCreditApi\Enum\TradelineSyncType;
 use LevelCredit\LevelCreditApi\Enum\UserStatus;
 use LevelCredit\LevelCreditApi\Exception\SerializerException;
+use LevelCredit\LevelCreditApi\Model\Request\BankAccount;
+use LevelCredit\LevelCreditApi\Model\Request\CardAccount;
 use LevelCredit\LevelCreditApi\Model\Request\CreateTradelineSyncRequest;
 use LevelCredit\LevelCreditApi\Model\Request\GetPartnerUsersFilter;
+use LevelCredit\LevelCreditApi\Model\Request\PaymentAccountAddress;
+use LevelCredit\LevelCreditApi\Model\Request\PaymentSource;
+use LevelCredit\LevelCreditApi\Model\Request\PayProductRequest;
 use LevelCredit\LevelCreditApi\Model\Response\AccessTokenResponse;
 use LevelCredit\LevelCreditApi\Model\Response\EmptyResponse;
+use LevelCredit\LevelCreditApi\Model\Response\OrderResourceResponse;
 use LevelCredit\LevelCreditApi\Model\Response\Resource\AccessToken;
+use LevelCredit\LevelCreditApi\Model\Response\Resource\Order;
 use LevelCredit\LevelCreditApi\Model\Response\Resource\Subscription;
 use LevelCredit\LevelCreditApi\Model\Response\Resource\Sync;
 use LevelCredit\LevelCreditApi\Model\Response\Resource\User;
+use LevelCredit\LevelCreditApi\Model\Response\SubModel\OrderError;
 use LevelCredit\LevelCreditApi\Model\Response\SyncResourceResponse;
 use LevelCredit\LevelCreditApi\Model\Response\UserCollectionResponse;
 use LevelCredit\LevelCreditApi\Serializer\Serializer;
@@ -110,17 +123,184 @@ class SerializerTest extends TestCase
     /**
      * @test
      */
-    public function shouldSerializePayProductRequestFull(): void
+    public function shouldSerializePayProductRequestWithPaymentAccountUrl(): void
     {
-         $this->markTestIncomplete('Should finish');
+        $jsonRequest = '{
+            "object_url":"https://my.levelcredit.com/api/subscriptions/2744222269",
+            "payment_account_url":"https://my.levelcredit.com/api/tenant/payment_accounts/2744222269",
+            "amount":10.01
+        }';
+        $jsonRequest = json_encode(json_decode($jsonRequest)); // need for clear extra spaces
+
+        $request = PayProductRequest::create()
+             ->setPaymentAccountUrl('https://my.levelcredit.com/api/tenant/payment_accounts/2744222269')
+             ->setAmount(10.01)
+             ->setObjectUrl('https://my.levelcredit.com/api/subscriptions/2744222269');
+
+        $this->assertEquals(
+            $jsonRequest,
+            Serializer::create()->serializeRequest($request)
+        );
     }
 
     /**
      * @test
      */
-    public function shouldSerializePayProductRequestShort(): void
+    public function shouldSerializePayProductRequestCard(): void
     {
-        $this->markTestIncomplete('Should finish');
+        $jsonRequest = '{
+            "object_url":"https://my.levelcredit.com/api/leases/5444233357",
+            "payment_account":{
+                "address":{
+                    "street":"123 Street",
+                    "city":"New-York",
+                    "state":"NY",
+                    "zip":"10001"
+                },
+                "type":"card",
+                "name":"John Been",
+                "card":{
+                    "account":"4111111111111111",
+                    "cvv":"122",
+                    "expiration":"2015-01"
+                }
+            },
+            "amount":2.98
+        }';
+        $jsonRequest = json_encode(json_decode($jsonRequest)); // need for clear extra spaces
+
+        $request = PayProductRequest::create()
+            ->setPaymentAccount(
+                PaymentSource::create()
+                    ->setName('John Been')
+                    ->setType(PaymentAccountType::CARD)
+                    ->setCard(
+                        CardAccount::create()
+                            ->setAccount('4111111111111111')
+                            ->setExpiration('2015-01')
+                            ->setCvv('122')
+                    )
+                    ->setAddress(
+                        PaymentAccountAddress::create()
+                            ->setStreet('123 Street')
+                            ->setCity('New-York')
+                            ->setState('NY')
+                            ->setZip('10001')
+                    )
+            )
+            ->setAmount(2.98)
+            ->setObjectUrl('https://my.levelcredit.com/api/leases/5444233357');
+
+        $this->assertEquals(
+            $jsonRequest,
+            Serializer::create()->serializeRequest($request)
+        );
+    }
+
+    /**
+     * @test
+     */
+    public function shouldSerializePayProductRequestDebitCard(): void
+    {
+        $jsonRequest = '{
+            "object_url":"https://my.levelcredit.com/api/contracts/121323232345",
+            "payment_account":{
+                "address":{
+                    "street":"770 Broadway",
+                    "city":"New-York",
+                    "state":"NY",
+                    "zip":"10001"
+                },
+                "type":"debit_card",
+                "name":"Jack M. Sparrow",
+                "debit_card":{
+                    "account":"379300307374154",
+                    "expiration":"2031-12"
+                }
+            },
+            "amount":12.03
+        }';
+        $jsonRequest = json_encode(json_decode($jsonRequest)); // need for clear extra spaces
+
+        $request = PayProductRequest::create()
+            ->setPaymentAccount(
+                PaymentSource::create()
+                    ->setName('Jack M. Sparrow')
+                    ->setType(PaymentAccountType::DEBIT_CARD)
+                    ->setDebitCard(
+                        CardAccount::create()
+                            ->setAccount('379300307374154')
+                            ->setExpiration('2031-12')
+                    )
+                    ->setAddress(
+                        PaymentAccountAddress::create()
+                            ->setStreet('770 Broadway')
+                            ->setCity('New-York')
+                            ->setState('NY')
+                            ->setZip('10001')
+                    )
+            )
+            ->setAmount(12.03)
+            ->setObjectUrl('https://my.levelcredit.com/api/contracts/121323232345');
+
+        $this->assertEquals(
+            $jsonRequest,
+            Serializer::create()->serializeRequest($request)
+        );
+    }
+
+    /**
+     * @test
+     */
+    public function shouldSerializePayProductRequestBank(): void
+    {
+        $jsonRequest = '{
+            "object_url":"https://my.levelcredit.com/api/subscriptions/545052525",
+            "payment_account":{
+                "address":{
+                    "street":"1245 Test Ave.",
+                    "city":"Test. City",
+                    "state":"NC",
+                    "zip":"98899"
+                },
+                "type":"bank",
+                "name":"John Brown",
+                "bank":{
+                    "routing":"03334566",
+                    "account":"23024443300003",
+                    "type":"business checking"
+                }
+            },
+            "amount":9.99
+        }';
+        $jsonRequest = json_encode(json_decode($jsonRequest)); // need for clear extra spaces
+
+        $request = PayProductRequest::create()
+            ->setPaymentAccount(
+                PaymentSource::create()
+                    ->setName('John Brown')
+                    ->setType(PaymentAccountType::BANK)
+                    ->setBank(
+                        BankAccount::create()
+                            ->setAccount('23024443300003')
+                            ->setRouting('03334566')
+                            ->setType(BankAccountType::BUSINESS_CHECKING)
+                    )
+                    ->setAddress(
+                        PaymentAccountAddress::create()
+                            ->setStreet('1245 Test Ave.')
+                            ->setCity('Test. City')
+                            ->setState('NC')
+                            ->setZip('98899')
+                    )
+            )
+            ->setAmount(9.99)
+            ->setObjectUrl('https://my.levelcredit.com/api/subscriptions/545052525');
+
+        $this->assertEquals(
+            $jsonRequest,
+            Serializer::create()->serializeRequest($request)
+        );
     }
 
     /**
@@ -264,7 +444,7 @@ class SerializerTest extends TestCase
     /**
      * @test
      */
-    public function shouldDeserializeUserCollectionResponse()
+    public function shouldDeserializeUserCollectionResponse(): void
     {
         $json = '[
             {
@@ -370,5 +550,74 @@ class SerializerTest extends TestCase
         $this->assertInstanceOf(Subscription::class, $subscription = $firstUser->getSubscriptions()->first());
         $this->assertEquals(5132551402, $subscription->getId());
         $this->assertEquals('https://my.levelcredit.com/api/subscriptions/5132551402', $subscription->getUrl());
+    }
+
+    /**
+     * @test
+     */
+    public function shouldDeserializeEmptyUserCollectionResponse(): void
+    {
+        $response = new Response(204, ['X-Total-Count' => 30]);
+        /** @var UserCollectionResponse $responseModel */
+        $responseModel =  Serializer::create()->deserializeResponse(
+            $response,
+            new UserCollectionResponse(),
+            User::class
+        );
+
+        $this->assertInstanceOf(UserCollectionResponse::class, $responseModel);
+        $this->assertEquals(204, $responseModel->getStatusCode());
+        $this->assertEmpty($responseModel->getErrors());
+        $this->assertEquals(30, $responseModel->getTotalCount());
+        $this->assertCount(0, $responseModel->getElements());
+    }
+
+    /**
+     * @test
+     */
+    public function shouldDeserializeOrderResourceResponse(): void
+    {
+        $json = '{
+            "id": 2132234322,
+            "url": "https://my.levelcredit.com/api/orders/2132234322",
+            "status": "error",
+            "error": {
+                "message": "Credit Card is declined."
+            },
+            "reference_id": "4344RT8540686",
+            "message": "Credit Card is declined.",
+            "type": "card",
+            "total": 101.01,
+            "fee": 3.01,
+            "created_at": 1611111111,
+            "delivery_method": "electronic"         
+        }';
+
+        $response = new Response(201, [], $json);
+
+        /** @var OrderResourceResponse $responseModel */
+        $responseModel =  Serializer::create()->deserializeResponse(
+            $response,
+            new OrderResourceResponse(),
+            Order::class
+        );
+
+        $this->assertInstanceOf(OrderResourceResponse::class, $responseModel);
+        $this->assertEquals(201, $responseModel->getStatusCode());
+        $this->assertEmpty($responseModel->getErrors());
+        $this->assertInstanceOf(Order::class, $resourceModel = $responseModel->getResource());
+        $this->assertEquals(2132234322, $resourceModel->getId());
+        $this->assertEquals('https://my.levelcredit.com/api/orders/2132234322', $resourceModel->getUrl());
+        $this->assertEquals(OrderStatus::ERROR, $resourceModel->getStatus());
+        $this->assertInstanceOf(OrderError::class, $resourceModel->getError());
+        $this->assertEquals('Credit Card is declined.', $resourceModel->getError()->getMessage());
+        $this->assertNull($resourceModel->getError()->getCode());
+        $this->assertEquals('Credit Card is declined.', $resourceModel->getMessage());
+        $this->assertEquals('4344RT8540686', $resourceModel->getReferenceId());
+        $this->assertEquals(OrderPaymentType::CARD, $resourceModel->getType());
+        $this->assertEquals(101.01, $resourceModel->getTotal());
+        $this->assertEquals(3.01, $resourceModel->getFee());
+        $this->assertEquals(new \DateTime('2021-01-20 02:51:51'), $resourceModel->getCreatedAt());
+        $this->assertEquals(OrderDeliveryMethod::ELECTRONIC, $resourceModel->getDeliveryMethod());
     }
 }

@@ -12,10 +12,13 @@ use LevelCredit\LevelCreditApi\Logging\LogHandlerInterface;
 use LevelCredit\LevelCreditApi\Model\Request\CreateTradelineSyncRequest;
 use LevelCredit\LevelCreditApi\Model\Request\GetPartnerUsersFilter;
 use LevelCredit\LevelCreditApi\Model\Request\PatchTradelineSyncRequest;
+use LevelCredit\LevelCreditApi\Model\Request\PayProductRequest;
 use LevelCredit\LevelCreditApi\Model\Response\AccessTokenResponse;
 use LevelCredit\LevelCreditApi\Model\Response\BaseResponse;
 use LevelCredit\LevelCreditApi\Model\Response\EmptyResponse;
+use LevelCredit\LevelCreditApi\Model\Response\OrderResourceResponse;
 use LevelCredit\LevelCreditApi\Model\Response\Resource\AccessToken;
+use LevelCredit\LevelCreditApi\Model\Response\Resource\Order;
 use LevelCredit\LevelCreditApi\Model\Response\Resource\Sync;
 use LevelCredit\LevelCreditApi\Model\Response\Resource\User;
 use LevelCredit\LevelCreditApi\Model\Response\SyncResourceResponse;
@@ -37,6 +40,7 @@ class LevelCreditApiClient
         'addDataToTradelineSync' => '/tradeline/syncs/%s/data',
         'patchTradelineSync' => '/tradeline/syncs',
         'getPartnerUsers' => '/partner/users',
+        'payProduct' => '/products/%s/orders',
     ];
 
     protected const RESPONSE_MAP = [
@@ -44,6 +48,7 @@ class LevelCreditApiClient
         'getAccessTokenByRefreshToken' => AccessToken::class,
         'createTradelineSync' => Sync::class,
         'getPartnerUsers' => User::class,
+        'payProduct' => Order::class,
     ];
 
     protected const LOG_STACK = 'logging';
@@ -98,15 +103,13 @@ class LevelCreditApiClient
     /**
      * @param string $clientId
      * @param string $clientSecret
-     * @param string $baseUri
      * @return static
      */
     public static function create(
         string $clientId = '',
-        string $clientSecret = '',
-        string $baseUri = self::BASE_URI
+        string $clientSecret = ''
     ): self {
-        return new static($clientId, $clientSecret, $baseUri);
+        return new static($clientId, $clientSecret);
     }
 
     /**
@@ -305,6 +308,29 @@ class LevelCreditApiClient
         );
 
         return $this->parseResponse(__FUNCTION__, $response, new UserCollectionResponse());
+    }
+
+    /**
+     * @param string $productCode
+     * @param PayProductRequest $request
+     * @param string|null $accessToken
+     * @return OrderResourceResponse|BaseResponse
+     * @throws Exception\LevelCreditApiException
+     */
+    public function payProduct(
+        string $productCode,
+        PayProductRequest $request,
+        string $accessToken = null
+    ): OrderResourceResponse {
+        $response = $this->__sendRequest(
+            'POST',
+            $this->preparePath(__FUNCTION__, $productCode),
+            [],
+            $this->prepareAuthorizeHeader($accessToken),
+            $this->prepareBodyRequest($request)
+        );
+
+        return $this->parseResponse(__FUNCTION__, $response, new OrderResourceResponse());
     }
 
     /**
