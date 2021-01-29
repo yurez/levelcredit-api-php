@@ -3,7 +3,7 @@
   "description": "LevelCredit API Client Library for PHP",
   "minimum-stability": "stable",
   "license": "MIT",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "authors": [
     {
       "name": "Yuriy Borovchuk",
