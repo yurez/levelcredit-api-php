@@ -24,13 +24,14 @@ use LevelCredit\LevelCreditApi\Model\Response\Resource\User;
 use LevelCredit\LevelCreditApi\Model\Response\SyncResourceResponse;
 use LevelCredit\LevelCreditApi\Model\Response\UserCollectionResponse;
 use LevelCredit\LevelCreditApi\Serializer\Serializer;
+use LevelCredit\LevelCreditApi\Serializer\SerializerInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamInterface;
 use Psr\Http\Message\UriInterface;
 
 class LevelCreditApiClient
 {
-    protected const BASE_URI = 'https://my.levelcredit.com';
+    protected const BASE_URI = 'https://my.sandbox2.renttrack.com';
 
     protected const BASE_API_PREFIX = '/api';
 
@@ -105,18 +106,16 @@ class LevelCreditApiClient
      * @param string $clientSecret
      * @return static
      */
-    public static function create(
-        string $clientId = '',
-        string $clientSecret = ''
-    ): self {
+    public static function create(string $clientId = '', string $clientSecret = ''): self
+    {
         return new static($clientId, $clientSecret);
     }
 
     /**
-     * @param Serializer $serializer
+     * @param SerializerInterface $serializer
      * @return static
      */
-    public function setSerializer(Serializer $serializer): self
+    public function setSerializer(SerializerInterface $serializer): self
     {
         $this->serializer = $serializer;
 

@@ -15,7 +15,7 @@ use LevelCredit\LevelCreditApi\Model\Response\ErrorCollection;
 use LevelCredit\LevelCreditApi\Model\Response\ResourceResponse;
 use Psr\Http\Message\ResponseInterface;
 
-class Serializer
+class Serializer implements SerializerInterface
 {
     protected const FAILED_STATUS_ENTRY_POINT = 400;
 
