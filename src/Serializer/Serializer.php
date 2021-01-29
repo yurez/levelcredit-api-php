@@ -15,7 +15,7 @@ use LevelCredit\LevelCreditApi\Model\Response\ErrorCollection;
 use LevelCredit\LevelCreditApi\Model\Response\ResourceResponse;
 use Psr\Http\Message\ResponseInterface;
 
-class Serializer
+class Serializer implements SerializerInterface
 {
     protected const FAILED_STATUS_ENTRY_POINT = 400;
 
@@ -96,7 +96,7 @@ class Serializer
         $responseModel->setStatusCode($response->getStatusCode());
 
         if (empty($body)) {
-            return $this->processEmptyResponse($responseModel);
+            return $this->processEmptyResponse($responseModel, (int)$response->getHeaderLine('X-Total-Count'));
         } elseif ($response->getStatusCode() >= static::FAILED_STATUS_ENTRY_POINT) {
             return $this->processFailedResponse($responseModel, $body);
         } elseif ($responseModel instanceof CollectionResponse) {
@@ -115,12 +115,19 @@ class Serializer
 
     /**
      * @param BaseResponse $responseModel
-     * @return EmptyResponse
+     * @param int $totalCount
+     * @return EmptyResponse|CollectionResponse
      * @throws SerializerException
      */
-    protected function processEmptyResponse(BaseResponse $responseModel): EmptyResponse
+    protected function processEmptyResponse(BaseResponse $responseModel, int $totalCount = 0): BaseResponse
     {
         if ($responseModel instanceof EmptyResponse) {
+            return $responseModel;
+        }
+        if ($responseModel instanceof CollectionResponse) {
+            $responseModel->setElements(new ArrayCollection());
+            $responseModel->setTotalCount($totalCount);
+
             return $responseModel;
         }
 

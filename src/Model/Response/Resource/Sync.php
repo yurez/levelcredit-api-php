@@ -3,11 +3,13 @@
 namespace LevelCredit\LevelCreditApi\Model\Response\Resource;
 
 use JMS\Serializer\Annotation as Serializer;
+use LevelCredit\LevelCreditApi\Enum\TradelineSyncStatus;
 
 class Sync extends BaseResource
 {
     /**
      * @var string
+     * @see TradelineSyncStatus
      *
      * @Serializer\Type("string")
      */
