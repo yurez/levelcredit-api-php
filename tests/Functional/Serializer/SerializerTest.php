@@ -268,7 +268,7 @@ class SerializerTest extends TestCase
                 "bank":{
                     "routing":"03334566",
                     "account":"23024443300003",
-                    "type":"business checking"
+                    "type":"checking"
                 }
             },
             "amount":9.99
@@ -284,7 +284,7 @@ class SerializerTest extends TestCase
                         BankAccount::create()
                             ->setAccount('23024443300003')
                             ->setRouting('03334566')
-                            ->setType(BankAccountType::BUSINESS_CHECKING)
+                            ->setType(BankAccountType::CHECKING)
                     )
                     ->setAddress(
                         PaymentAccountAddress::create()
