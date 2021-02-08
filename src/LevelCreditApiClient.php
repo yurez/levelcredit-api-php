@@ -39,7 +39,7 @@ class LevelCreditApiClient
         'auth' => '/oauth/v2/token',
         'createTradelineSync' => '/tradeline/syncs',
         'addDataToTradelineSync' => '/tradeline/syncs/%s/data',
-        'patchTradelineSync' => '/tradeline/syncs',
+        'patchTradelineSync' => '/tradeline/syncs/%s',
         'getPartnerUsers' => '/partner/users',
         'payProduct' => '/products/%s/orders',
     ];
