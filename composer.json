@@ -2,8 +2,8 @@
   "name": "levelcredit/levelcredit-api-php",
   "description": "LevelCredit API Client Library for PHP",
   "minimum-stability": "stable",
-  "license": "MIT",
-  "version": "1.0.1",
+  "license": "proprietary",
+  "version": "0.0.2",
   "authors": [
     {
       "name": "Yuriy Borovchuk",

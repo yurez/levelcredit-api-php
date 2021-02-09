@@ -144,3 +144,4 @@ for formatting request and response bodies and sensitive data sanitization.
 
 ### License
 
+LevelCredit API Client is licensed under the Proprietary License - see the [LICENSE](LICENSE) file for details
